@@ -1,0 +1,7 @@
+{
+  "name": "GitChat AI",
+  "description": "An interactive chatbot that analyzes GitHub repositories. Enter a repository URL, and the AI will analyze the code structure and content to answer your questions in detail.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
