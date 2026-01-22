@@ -3,7 +3,14 @@
 import { RepoInfo, FileNode, RagChunk, KnowledgeGraph, ChatSession, Bookmark } from '../types';
 
 const DB_NAME = 'GitChatDB';
-const DB_VERSION = 3; // Incremented for bookmarks
+/**
+ * Database version history:
+ * - v1: Initial version with repositories store
+ * - v2: Added chat_sessions store for conversation history
+ * - v3: Added bookmarks store for message bookmarking feature
+ * Note: IndexedDB handles version upgrades automatically via onupgradeneeded
+ */
+const DB_VERSION = 3;
 
 interface CachedRepoData {
   repoId: string; // owner/repo

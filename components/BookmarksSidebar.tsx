@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Bookmark } from '../types';
 
 interface BookmarksSidebarProps {
@@ -10,6 +10,16 @@ interface BookmarksSidebarProps {
   onNavigateToMessage: (messageId: string) => void;
 }
 
+const formatBookmarkDate = (timestamp: number): string => {
+  const date = new Date(timestamp);
+  return date.toLocaleDateString('ar-SA', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
 const BookmarksSidebar: React.FC<BookmarksSidebarProps> = ({
   isOpen,
   onClose,
@@ -17,15 +27,6 @@ const BookmarksSidebar: React.FC<BookmarksSidebarProps> = ({
   onRemoveBookmark,
   onNavigateToMessage
 }) => {
-  const formatDate = (timestamp: number): string => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString('ar-SA', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   if (!isOpen) return null;
 
@@ -82,7 +83,7 @@ const BookmarksSidebar: React.FC<BookmarksSidebarProps> = ({
                 {/* Footer */}
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-xs text-muted-foreground">
-                    {formatDate(bookmark.timestamp)}
+                    {formatBookmarkDate(bookmark.timestamp)}
                   </span>
                   <button
                     onClick={(e) => {

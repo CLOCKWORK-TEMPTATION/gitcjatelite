@@ -123,7 +123,11 @@ const App: React.FC = () => {
   const [theme, setTheme] = useState<ThemeMode>(() => {
     try {
       const saved = localStorage.getItem('gitChatTheme');
-      return (saved as ThemeMode) || 'dark';
+      // Validate saved theme is a valid ThemeMode
+      if (saved === 'dark' || saved === 'light') {
+        return saved;
+      }
+      return 'dark';
     } catch { return 'dark'; }
   });
 
@@ -361,8 +365,13 @@ const App: React.FC = () => {
 
   // --- Bookmark Handlers ---
   const handleAddBookmark = async (message: Message, note?: string) => {
+    // Use crypto.randomUUID() for robust ID generation to avoid collisions
+    const bookmarkId = typeof crypto !== 'undefined' && crypto.randomUUID 
+      ? crypto.randomUUID() 
+      : `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
     const newBookmark: Bookmark = {
-      id: Date.now().toString(),
+      id: bookmarkId,
       messageId: message.id,
       content: message.content.slice(0, 500),
       timestamp: Date.now(),

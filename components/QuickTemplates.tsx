@@ -10,6 +10,10 @@ interface QuickTemplatesProps {
 
 type CategoryFilter = 'all' | 'analysis' | 'security' | 'performance' | 'documentation';
 
+// Configuration constants
+const PROMPT_PREVIEW_LENGTH = 60;
+const QUICK_ACCESS_COUNT = 3;
+
 const categoryLabels: Record<CategoryFilter, { en: string; ar: string; icon: string }> = {
   all: { en: 'All', ar: 'الكل', icon: '📋' },
   analysis: { en: 'Analysis', ar: 'تحليل', icon: '🔬' },
@@ -43,7 +47,7 @@ const QuickTemplates: React.FC<QuickTemplatesProps> = ({ onSelectTemplate, isDis
           </button>
           
           {/* Top 3 Quick Actions */}
-          {QUICK_TEMPLATES.slice(0, 3).map((template) => (
+          {QUICK_TEMPLATES.slice(0, QUICK_ACCESS_COUNT).map((template) => (
             <button
               key={template.id}
               onClick={() => onSelectTemplate(template.prompt)}
@@ -113,7 +117,7 @@ const QuickTemplates: React.FC<QuickTemplatesProps> = ({ onSelectTemplate, isDis
                     {template.labelAr}
                   </div>
                   <div className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5">
-                    {template.prompt.slice(0, 60)}...
+                    {template.prompt.slice(0, PROMPT_PREVIEW_LENGTH)}...
                   </div>
                 </div>
               </button>
