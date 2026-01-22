@@ -234,3 +234,35 @@ export interface InfographicResult {
   style: InfographicStyle;
   date: number;
 }
+
+// --- Bookmark Types ---
+export interface Bookmark {
+  id: string;
+  messageId: string;
+  content: string;
+  timestamp: number;
+  sessionId: string;
+  note?: string;
+}
+
+// --- Quick Templates Types ---
+export interface QuickTemplate {
+  id: string;
+  label: string;
+  labelAr: string;
+  prompt: string;
+  category: 'analysis' | 'security' | 'performance' | 'documentation';
+  icon: string;
+}
+
+// --- Session Stats Types ---
+export interface SessionStats {
+  messageCount: number;
+  userMessageCount: number;
+  aiMessageCount: number;
+  sessionStartTime: number;
+  averageResponseTime: number;
+}
+
+// --- Theme Types ---
+export type ThemeMode = 'dark' | 'light';

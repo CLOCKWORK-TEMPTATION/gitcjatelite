@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Message, AppStatus, RepoInfo, FileNode, AppSettings, YoutubeInfo, FileContent, KnowledgeGraph, Challenge, UserProfile, SubmissionResult, ChatSession } from './types';
+import { Message, AppStatus, RepoInfo, FileNode, AppSettings, YoutubeInfo, FileContent, KnowledgeGraph, Challenge, UserProfile, SubmissionResult, ChatSession, Bookmark, ThemeMode } from './types';
 import { parseGithubUrl, fetchRepoDetails, fetchRepoTree, fetchRepoFiles, fetchFileContent } from './services/githubService';
 import { fetchUrlContent } from './services/webService';
 import { extractVideoId, fetchYoutubeTranscript } from './services/youtubeService';
@@ -27,6 +27,10 @@ import HistorySidebar from './components/HistorySidebar';
 import RepoAnalyzer from './components/RepoAnalyzer';
 import ArticleToInfographic from './components/ArticleToInfographic';
 import DevStudio from './components/DevStudio';
+import QuickTemplates from './components/QuickTemplates';
+import SessionStatsWidget from './components/SessionStatsWidget';
+import ThemeToggle from './components/ThemeToggle';
+import BookmarksSidebar from './components/BookmarksSidebar';
 
 // Icons (Updated styles handled via className in usage)
 const GithubIcon = () => (<svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" /></svg>);
@@ -85,6 +89,7 @@ const App: React.FC = () => {
   const [isVisualizerOpen, setIsVisualizerOpen] = useState(false);
   const [isInfographicOpen, setIsInfographicOpen] = useState(false);
   const [isDevStudioOpen, setIsDevStudioOpen] = useState(false);
+  const [isBookmarksOpen, setIsBookmarksOpen] = useState(false);
 
   const [urlInput, setUrlInput] = useState('');
   
@@ -111,6 +116,20 @@ const App: React.FC = () => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const [executedFileName, setExecutedFileName] = useState('');
+
+  // New Feature States
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [sessionStartTime] = useState<number>(() => Date.now());
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    try {
+      const saved = localStorage.getItem('gitChatTheme');
+      // Validate saved theme is a valid ThemeMode
+      if (saved === 'dark' || saved === 'light') {
+        return saved;
+      }
+      return 'dark';
+    } catch { return 'dark'; }
+  });
 
   const [statusMessage, setStatusMessage] = useState('');
   const [selectedImage, setSelectedImage] = useState<{ data: string, mimeType: string } | null>(null);
@@ -164,6 +183,28 @@ const App: React.FC = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, chatSearchQuery, viewMode]);
+
+  // Theme persistence and application
+  useEffect(() => {
+    try {
+      localStorage.setItem('gitChatTheme', theme);
+      document.documentElement.classList.remove('light', 'dark');
+      document.documentElement.classList.add(theme);
+    } catch (e) {}
+  }, [theme]);
+
+  // Load bookmarks on mount
+  useEffect(() => {
+    const loadBookmarks = async () => {
+      try {
+        const allBookmarks = await dbService.getAllBookmarks();
+        setBookmarks(allBookmarks);
+      } catch (e) {
+        console.error("Failed to load bookmarks", e);
+      }
+    };
+    loadBookmarks();
+  }, []);
 
   useEffect(() => {
     try {
@@ -322,6 +363,58 @@ const App: React.FC = () => {
       } catch (error: any) { console.error(error); }
   };
 
+  // --- Bookmark Handlers ---
+  const handleAddBookmark = async (message: Message, note?: string) => {
+    // Use crypto.randomUUID() for robust ID generation to avoid collisions
+    const bookmarkId = typeof crypto !== 'undefined' && crypto.randomUUID 
+      ? crypto.randomUUID() 
+      : `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    const newBookmark: Bookmark = {
+      id: bookmarkId,
+      messageId: message.id,
+      content: message.content.slice(0, 500),
+      timestamp: Date.now(),
+      sessionId: sessionId,
+      note
+    };
+    
+    try {
+      await dbService.saveBookmark(newBookmark);
+      setBookmarks(prev => [newBookmark, ...prev]);
+    } catch (e) {
+      console.error("Failed to save bookmark", e);
+    }
+  };
+
+  const handleRemoveBookmark = async (bookmarkId: string) => {
+    try {
+      await dbService.deleteBookmark(bookmarkId);
+      setBookmarks(prev => prev.filter(b => b.id !== bookmarkId));
+    } catch (e) {
+      console.error("Failed to delete bookmark", e);
+    }
+  };
+
+  const handleNavigateToMessage = (messageId: string) => {
+    const element = document.getElementById(`message-${messageId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.classList.add('highlight-message');
+      setTimeout(() => element.classList.remove('highlight-message'), 2000);
+    }
+    setIsBookmarksOpen(false);
+  };
+
+  const isMessageBookmarked = (messageId: string): boolean => {
+    return bookmarks.some(b => b.messageId === messageId);
+  };
+
+  // --- Quick Template Handler ---
+  const handleSelectTemplate = (prompt: string) => {
+    setInputText(prompt);
+  };
+
   // --- Reset/New Chat ---
   const handleReset = () => {
     setMessages([]);
@@ -340,6 +433,7 @@ const App: React.FC = () => {
         abortControllerRef.current = null;
     }
   };
+
 
   const handleStartAnalysis = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -653,13 +747,22 @@ const App: React.FC = () => {
   else if (youtubeInfo) currentTitle = youtubeInfo.title;
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground font-sans overflow-hidden" dir="rtl">
+    <div className={`flex flex-col h-screen bg-background text-foreground font-sans overflow-hidden ${theme}`} dir="rtl">
       
       {isSettingsOpen && <SettingsModal settings={settings} onUpdate={setSettings} onClose={() => setIsSettingsOpen(false)} />}
       {isDiagramOpen && fileTree.length > 0 && <MermaidDiagram files={fileTree} onClose={() => setIsDiagramOpen(false)} />}
       {activeChallenge && <ChallengeOverlay challenge={activeChallenge} onClose={() => setActiveChallenge(null)} onSubmit={handleChallengeSubmit} />}
       <RepoAnalyzer isOpen={isVisualizerOpen} onClose={() => setIsVisualizerOpen(false)} githubToken={settings.githubToken} />
       <ArticleToInfographic isOpen={isInfographicOpen} onClose={() => setIsInfographicOpen(false)} />
+      
+      {/* Bookmarks Sidebar */}
+      <BookmarksSidebar
+        isOpen={isBookmarksOpen}
+        onClose={() => setIsBookmarksOpen(false)}
+        bookmarks={bookmarks}
+        onRemoveBookmark={handleRemoveBookmark}
+        onNavigateToMessage={handleNavigateToMessage}
+      />
       
       {/* Dev Studio Component */}
       <DevStudio 
@@ -692,6 +795,18 @@ const App: React.FC = () => {
         <div className="flex items-center gap-4 overflow-hidden">
           <button onClick={() => setIsHistoryOpen(true)} className="p-2 rounded-xl hover:bg-secondary text-primary transition-all">
              <HistoryIcon />
+          </button>
+          
+          {/* Bookmarks Button */}
+          <button onClick={() => setIsBookmarksOpen(true)} className="p-2 rounded-xl hover:bg-secondary text-yellow-500 transition-all relative" title="الإشارات المرجعية">
+             <svg className="w-5 h-5" fill={bookmarks.length > 0 ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+             </svg>
+             {bookmarks.length > 0 && (
+               <span className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 text-black text-[10px] font-bold rounded-full flex items-center justify-center">
+                 {bookmarks.length > 9 ? '9+' : bookmarks.length}
+               </span>
+             )}
           </button>
           
           <div className="h-6 w-px bg-border mx-1"></div>
@@ -748,8 +863,15 @@ const App: React.FC = () => {
                     {(inputMode === 'github' || inputMode === 'local' || inputMode === 'package') && (
                         <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-all md:hidden"><MenuIcon /></button>
                     )}
+                    
+                    {/* Session Stats Widget */}
+                    <SessionStatsWidget messages={messages} sessionStartTime={sessionStartTime} />
                  </>
              )}
+             
+            {/* Theme Toggle */}
+            <ThemeToggle theme={theme} onToggle={setTheme} />
+            
             <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-all"><SettingsIcon /></button>
         </div>
       </header>
@@ -857,6 +979,15 @@ const App: React.FC = () => {
                                     message={msg} 
                                     onTimestampClick={youtubeInfo ? (sec) => playerRef.current?.seekTo(sec) : undefined}
                                     onRunCode={handleRunCode}
+                                    onBookmark={(m) => {
+                                      if (isMessageBookmarked(m.id)) {
+                                        const bookmark = bookmarks.find(b => b.messageId === m.id);
+                                        if (bookmark) handleRemoveBookmark(bookmark.id);
+                                      } else {
+                                        handleAddBookmark(m);
+                                      }
+                                    }}
+                                    isBookmarked={isMessageBookmarked(msg.id)}
                                 />
                             ))}
                             <div ref={messagesEndRef} />
@@ -866,6 +997,14 @@ const App: React.FC = () => {
                     {/* Floating Input Area */}
                     <div className="absolute bottom-6 left-0 right-0 px-4 z-20">
                         <div className="max-w-3xl mx-auto">
+                            {/* Quick Templates */}
+                            <div className="mb-2">
+                              <QuickTemplates 
+                                onSelectTemplate={handleSelectTemplate} 
+                                isDisabled={status !== AppStatus.READY}
+                              />
+                            </div>
+                            
                             <form onSubmit={handleSendMessage} className="relative flex flex-col bg-background/95 backdrop-blur-xl border border-border shadow-2xl shadow-black/20 rounded-2xl ring-1 ring-white/5 transition-all">
                                 {selectedImage && (
                                     <div className="px-4 py-3 border-b border-border flex items-center justify-between animate-fade-in bg-secondary/30 rounded-t-2xl">
