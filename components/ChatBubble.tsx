@@ -7,6 +7,8 @@ interface ChatBubbleProps {
   message: Message;
   onTimestampClick?: (seconds: number) => void;
   onRunCode?: (code: string, language: string) => void;
+  onBookmark?: (message: Message) => void;
+  isBookmarked?: boolean;
 }
 
 const CodeBlock: React.FC<{ code: string; language?: string; onRunCode?: (code: string, lang: string) => void }> = ({ code, language, onRunCode }) => {
@@ -104,7 +106,7 @@ const CodeBlock: React.FC<{ code: string; language?: string; onRunCode?: (code: 
   );
 };
 
-const ChatBubble: React.FC<ChatBubbleProps> = ({ message, onTimestampClick, onRunCode }) => {
+const ChatBubble: React.FC<ChatBubbleProps> = ({ message, onTimestampClick, onRunCode, onBookmark, isBookmarked = false }) => {
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
   
@@ -168,7 +170,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, onTimestampClick, onRu
   }
 
   return (
-    <div className={`flex w-full mb-6 ${isUser ? 'justify-end' : 'justify-start'} animate-slide-up group`}>
+    <div id={`message-${message.id}`} className={`flex w-full mb-6 ${isUser ? 'justify-end' : 'justify-start'} animate-slide-up group`}>
         {!isUser && (
             <div className="hidden md:flex flex-shrink-0 mr-4 w-8 h-8 rounded-lg bg-secondary border border-border items-center justify-center text-primary">
                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
@@ -181,6 +183,23 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, onTimestampClick, onRu
             : 'bg-card text-card-foreground border-border'
         }`}
       >
+        {/* Bookmark Button */}
+        {onBookmark && !isSystem && (
+          <button
+            onClick={() => onBookmark(message)}
+            className={`absolute -top-2 -right-2 p-1.5 rounded-full border shadow-sm transition-all opacity-0 group-hover:opacity-100 ${
+              isBookmarked 
+                ? 'bg-yellow-500 border-yellow-400 text-black' 
+                : 'bg-card border-border text-muted-foreground hover:text-yellow-500 hover:border-yellow-500'
+            }`}
+            title={isBookmarked ? 'إزالة الإشارة المرجعية' : 'إضافة إشارة مرجعية'}
+          >
+            <svg className="w-3.5 h-3.5" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+          </button>
+        )}
+        
         <div className={`text-[15px] leading-relaxed ${isUser ? 'font-medium' : 'font-normal prose prose-invert max-w-none'}`} dir="auto">
            {isUser ? message.content : formatContent(message.content)}
            {message.image && (

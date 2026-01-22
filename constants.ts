@@ -85,3 +85,112 @@ Return ONLY a valid JSON object with the following structure:
   ]
 }
 `;
+
+// --- Quick Templates for Common Questions ---
+import { QuickTemplate } from './types';
+
+export const QUICK_TEMPLATES: QuickTemplate[] = [
+  // Analysis Templates
+  {
+    id: 'analyze-structure',
+    label: 'Analyze Structure',
+    labelAr: 'تحليل الهيكل',
+    prompt: 'قم بتحليل هيكلية هذا المشروع وشرح كيفية تنظيم الملفات والمجلدات',
+    category: 'analysis',
+    icon: '🏗️'
+  },
+  {
+    id: 'explain-architecture',
+    label: 'Explain Architecture',
+    labelAr: 'شرح البنية',
+    prompt: 'اشرح البنية المعمارية (Architecture) لهذا المشروع وأهم الأنماط المستخدمة',
+    category: 'analysis',
+    icon: '📐'
+  },
+  {
+    id: 'find-entry-point',
+    label: 'Find Entry Point',
+    labelAr: 'نقطة البداية',
+    prompt: 'ما هي نقطة البداية (Entry Point) لهذا المشروع وكيف يبدأ التنفيذ؟',
+    category: 'analysis',
+    icon: '🚀'
+  },
+  
+  // Security Templates
+  {
+    id: 'security-review',
+    label: 'Security Review',
+    labelAr: 'مراجعة أمنية',
+    prompt: 'قم بمراجعة أمنية شاملة للكود وحدد أي ثغرات محتملة (OWASP Top 10)',
+    category: 'security',
+    icon: '🔒'
+  },
+  {
+    id: 'find-secrets',
+    label: 'Find Secrets',
+    labelAr: 'كشف الأسرار',
+    prompt: 'ابحث عن أي مفاتيح API أو كلمات مرور أو أسرار مكشوفة في الكود',
+    category: 'security',
+    icon: '🔑'
+  },
+  {
+    id: 'check-dependencies',
+    label: 'Check Dependencies',
+    labelAr: 'فحص التبعيات',
+    prompt: 'راجع التبعيات (dependencies) المستخدمة وحدد أي مخاطر أمنية محتملة',
+    category: 'security',
+    icon: '📦'
+  },
+  
+  // Performance Templates
+  {
+    id: 'performance-audit',
+    label: 'Performance Audit',
+    labelAr: 'تدقيق الأداء',
+    prompt: 'قم بتحليل الأداء وحدد أي مشاكل محتملة مثل Memory Leaks أو حلقات غير محسنة',
+    category: 'performance',
+    icon: '⚡'
+  },
+  {
+    id: 'optimize-code',
+    label: 'Optimize Code',
+    labelAr: 'تحسين الكود',
+    prompt: 'اقترح تحسينات للأداء في هذا الكود مع أمثلة عملية',
+    category: 'performance',
+    icon: '🚄'
+  },
+  {
+    id: 'find-bottlenecks',
+    label: 'Find Bottlenecks',
+    labelAr: 'اكتشاف الاختناقات',
+    prompt: 'حدد نقاط الاختناق (Bottlenecks) المحتملة في الأداء',
+    category: 'performance',
+    icon: '🔍'
+  },
+  
+  // Documentation Templates
+  {
+    id: 'generate-readme',
+    label: 'Generate README',
+    labelAr: 'إنشاء README',
+    prompt: 'أنشئ ملف README.md شامل لهذا المشروع يتضمن الوصف والتثبيت والاستخدام',
+    category: 'documentation',
+    icon: '📝'
+  },
+  {
+    id: 'document-api',
+    label: 'Document API',
+    labelAr: 'توثيق API',
+    prompt: 'وثّق جميع واجهات API المتاحة في هذا المشروع مع أمثلة الاستخدام',
+    category: 'documentation',
+    icon: '📚'
+  },
+  {
+    id: 'explain-function',
+    label: 'Explain Function',
+    labelAr: 'شرح الدالة',
+    prompt: 'اشرح الدوال الرئيسية في هذا الملف وكيفية عملها',
+    category: 'documentation',
+    icon: '💡'
+  }
+];

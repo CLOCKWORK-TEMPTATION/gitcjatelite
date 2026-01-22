@@ -1,9 +1,9 @@
 
 
-import { RepoInfo, FileNode, RagChunk, KnowledgeGraph, ChatSession } from '../types';
+import { RepoInfo, FileNode, RagChunk, KnowledgeGraph, ChatSession, Bookmark } from '../types';
 
 const DB_NAME = 'GitChatDB';
-const DB_VERSION = 2; // Incremented for chat_sessions
+const DB_VERSION = 3; // Incremented for bookmarks
 
 interface CachedRepoData {
   repoId: string; // owner/repo
@@ -40,6 +40,13 @@ class DBService {
         if (!db.objectStoreNames.contains('chat_sessions')) {
            const chatStore = db.createObjectStore('chat_sessions', { keyPath: 'id' });
            chatStore.createIndex('lastUpdated', 'lastUpdated', { unique: false });
+        }
+
+        // Store for Bookmarks
+        if (!db.objectStoreNames.contains('bookmarks')) {
+           const bookmarkStore = db.createObjectStore('bookmarks', { keyPath: 'id' });
+           bookmarkStore.createIndex('sessionId', 'sessionId', { unique: false });
+           bookmarkStore.createIndex('timestamp', 'timestamp', { unique: false });
         }
       };
     });
@@ -146,6 +153,65 @@ class DBService {
       return new Promise((resolve, reject) => {
           const transaction = this.db!.transaction(['chat_sessions'], 'readwrite');
           const store = transaction.objectStore('chat_sessions');
+          const request = store.delete(id);
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+      });
+  }
+
+  // --- Bookmark Methods ---
+
+  async saveBookmark(bookmark: Bookmark): Promise<void> {
+      if (!this.db) await this.init();
+
+      return new Promise((resolve, reject) => {
+          const transaction = this.db!.transaction(['bookmarks'], 'readwrite');
+          const store = transaction.objectStore('bookmarks');
+          const request = store.put(bookmark);
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+      });
+  }
+
+  async getAllBookmarks(): Promise<Bookmark[]> {
+      if (!this.db) await this.init();
+
+      return new Promise((resolve, reject) => {
+          const transaction = this.db!.transaction(['bookmarks'], 'readonly');
+          const store = transaction.objectStore('bookmarks');
+          const index = store.index('timestamp');
+          const request = index.getAll();
+          
+          request.onsuccess = () => {
+              const bookmarks = request.result as Bookmark[];
+              resolve(bookmarks.reverse()); // Newest first
+          };
+          request.onerror = () => reject(request.error);
+      });
+  }
+
+  async getBookmarksBySession(sessionId: string): Promise<Bookmark[]> {
+      if (!this.db) await this.init();
+
+      return new Promise((resolve, reject) => {
+          const transaction = this.db!.transaction(['bookmarks'], 'readonly');
+          const store = transaction.objectStore('bookmarks');
+          const index = store.index('sessionId');
+          const request = index.getAll(sessionId);
+          
+          request.onsuccess = () => {
+              resolve(request.result as Bookmark[]);
+          };
+          request.onerror = () => reject(request.error);
+      });
+  }
+
+  async deleteBookmark(id: string): Promise<void> {
+      if (!this.db) await this.init();
+
+      return new Promise((resolve, reject) => {
+          const transaction = this.db!.transaction(['bookmarks'], 'readwrite');
+          const store = transaction.objectStore('bookmarks');
           const request = store.delete(id);
           request.onsuccess = () => resolve();
           request.onerror = () => reject(request.error);
